@@ -8,64 +8,49 @@ final class QuestionCatalog
     public static function workloads(): array
     {
         return [
-            'exchange' => 'Exchange / Microsoft 365',
-            'identity' => 'Active Directory / Entra ID',
-            'sharepoint' => 'SharePoint / OneDrive',
-            'teams' => 'Microsoft Teams',
-            'intune' => 'Intune / Device Management',
-            'azure' => 'Azure / AVD',
+            'email' => 'Email',
+            'teams' => 'Teams',
+            'sharepoint' => 'SharePoint',
+            'onedrive' => 'OneDrive',
+            'intune' => 'Intune',
         ];
     }
 
-    public static function questions(array $workloads): array
+    public static function questions(array $workloads = []): array
     {
-        $common = [
-            ['id' => 'common.business_goal', 'label' => 'What business outcome is driving the migration?', 'type' => 'textarea'],
-            ['id' => 'common.target_date', 'label' => 'Is there a required completion date or business deadline?', 'type' => 'text'],
-            ['id' => 'common.compliance', 'label' => 'Which security or compliance requirements apply?', 'type' => 'text'],
-            ['id' => 'common.locations', 'label' => 'How many users and physical locations are in scope?', 'type' => 'text'],
-            ['id' => 'common.change_window', 'label' => 'What change windows and outage restrictions apply?', 'type' => 'textarea'],
-        ];
+        return [
+            ['section' => 'Current email environment', 'id' => 'email.current_hosting', 'label' => 'Where is email currently hosted?', 'type' => 'select', 'options' => ['On-premises Exchange', 'Microsoft 365 / Exchange Online', 'Another hosted email provider', 'Hybrid Exchange', 'Other']],
+            ['section' => 'Current email environment', 'id' => 'email.platform_details', 'label' => 'What email platform, version, provider, and domain names are currently in use?', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.user_count', 'label' => 'How many user mailboxes are in scope?', 'type' => 'number'],
+            ['section' => 'Current email environment', 'id' => 'email.shared_count', 'label' => 'How many shared, room, and equipment mailboxes are in scope?', 'type' => 'text'],
+            ['section' => 'Current email environment', 'id' => 'email.service_accounts', 'label' => 'How many service accounts exist, and what are they used for?', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.data_volume', 'label' => 'What is the total mailbox data volume, average mailbox size, and largest mailbox?', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.archives', 'label' => 'Are mailbox archives being migrated? Describe native archives, PST files, journaling, or any third-party archive solution.', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.routing', 'label' => 'How is inbound and outbound mail routed today?', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.filtering', 'label' => 'Is a third-party mail filtering or security service in use?', 'type' => 'text'],
+            ['section' => 'Current email environment', 'id' => 'email.smtp', 'label' => 'Which devices or applications send email, such as scanners, copiers, monitoring systems, or line-of-business applications?', 'type' => 'textarea'],
+            ['section' => 'Current email environment', 'id' => 'email.special_features', 'label' => 'Are public folders, distribution groups, transport rules, delegated mailboxes, retention policies, or compliance searches in use?', 'type' => 'textarea'],
 
-        $byWorkload = [
-            'exchange' => [
-                ['id' => 'exchange.source', 'label' => 'Where are mailboxes currently hosted?', 'type' => 'select', 'options' => ['Exchange on-premises', 'Exchange Online', 'Hybrid Exchange', 'Other']],
-                ['id' => 'exchange.version', 'label' => 'What Exchange version and cumulative update are installed?', 'type' => 'text'],
-                ['id' => 'exchange.mailboxes', 'label' => 'How many user, shared, room, and equipment mailboxes are in scope?', 'type' => 'textarea'],
-                ['id' => 'exchange.data', 'label' => 'What is the total mailbox data volume and largest mailbox?', 'type' => 'text'],
-                ['id' => 'exchange.features', 'label' => 'Are public folders, archives, journaling, SMTP relay, or third-party gateways used?', 'type' => 'textarea'],
-            ],
-            'identity' => [
-                ['id' => 'identity.forests', 'label' => 'How many AD forests, domains, and domain controllers exist?', 'type' => 'text'],
-                ['id' => 'identity.sync', 'label' => 'Is Entra Connect Sync or Cloud Sync currently deployed?', 'type' => 'text'],
-                ['id' => 'identity.objects', 'label' => 'How many users, groups, service accounts, and devices are in scope?', 'type' => 'textarea'],
-                ['id' => 'identity.auth', 'label' => 'Describe MFA, Conditional Access, federation, and passwordless requirements.', 'type' => 'textarea'],
-            ],
-            'sharepoint' => [
-                ['id' => 'sharepoint.source', 'label' => 'What are the source platforms and versions?', 'type' => 'text'],
-                ['id' => 'sharepoint.volume', 'label' => 'How many sites and OneDrive accounts, and how much total data?', 'type' => 'textarea'],
-                ['id' => 'sharepoint.custom', 'label' => 'Are custom solutions, workflows, forms, or unsupported file types present?', 'type' => 'textarea'],
-            ],
-            'teams' => [
-                ['id' => 'teams.counts', 'label' => 'How many teams, channels, chats, and meetings are in scope?', 'type' => 'textarea'],
-                ['id' => 'teams.voice', 'label' => 'Is Teams Phone, Direct Routing, Operator Connect, or calling plan migration required?', 'type' => 'textarea'],
-                ['id' => 'teams.apps', 'label' => 'Which Teams applications, bots, connectors, and guest users must be addressed?', 'type' => 'textarea'],
-            ],
-            'intune' => [
-                ['id' => 'intune.devices', 'label' => 'How many Windows, macOS, iOS, and Android devices are in scope?', 'type' => 'textarea'],
-                ['id' => 'intune.join', 'label' => 'What are the current and desired device join states?', 'type' => 'text'],
-                ['id' => 'intune.controls', 'label' => 'Which policies, applications, certificates, VPNs, and compliance controls must migrate?', 'type' => 'textarea'],
-            ],
-            'azure' => [
-                ['id' => 'azure.resources', 'label' => 'Which subscriptions, workloads, resource types, and regions are in scope?', 'type' => 'textarea'],
-                ['id' => 'azure.network', 'label' => 'Describe connectivity, firewalls, DNS, VPN/ExpressRoute, and IP dependencies.', 'type' => 'textarea'],
-                ['id' => 'azure.avd', 'label' => 'Describe AVD host pools, images, profiles, applications, and user concurrency.', 'type' => 'textarea'],
-            ],
-        ];
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.tenant_exists', 'label' => 'Does the customer already have a Microsoft 365 tenant?', 'type' => 'select', 'options' => ['Yes', 'No', 'Unknown']],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.tenant_type', 'label' => 'Which Microsoft 365 tenant security environment is required?', 'type' => 'select', 'options' => ['Commercial', 'GCC', 'GCC High', 'Not yet determined']],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.workloads', 'label' => 'Which workloads are included in the migration?', 'type' => 'multiselect', 'options' => ['Email', 'Teams', 'SharePoint', 'OneDrive', 'Intune']],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.licensing', 'label' => 'What Microsoft 365 licensing is owned or expected, and are there security, voice, or compliance add-ons?', 'type' => 'textarea'],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.domains', 'label' => 'Which domains will be verified and used in Microsoft 365?', 'type' => 'textarea'],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.identity', 'label' => 'Will identities be cloud-only, synchronized from Active Directory, or federated?', 'type' => 'select', 'options' => ['Cloud-only', 'Entra Connect Sync', 'Entra Cloud Sync', 'Federated', 'Not yet determined']],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.security', 'label' => 'Describe MFA, Conditional Access, retention, DLP, eDiscovery, encryption, and other security or compliance requirements.', 'type' => 'textarea'],
+            ['section' => 'Microsoft 365 target environment', 'id' => 'm365.sso', 'label' => 'Are there SSO integrations with the existing environment or applications that must be migrated or recreated?', 'type' => 'textarea'],
 
-        foreach ($workloads as $workload) {
-            $common = array_merge($common, $byWorkload[$workload] ?? []);
-        }
-        return $common;
+            ['section' => 'Additional workloads', 'id' => 'teams.requirements', 'label' => 'For Teams, what teams, channels, chat history, meetings, guest access, apps, and voice services must be migrated?', 'type' => 'textarea'],
+            ['section' => 'Additional workloads', 'id' => 'sharepoint.requirements', 'label' => 'For SharePoint, how many sites and how much data must move? Include workflows, forms, customizations, and permissions.', 'type' => 'textarea'],
+            ['section' => 'Additional workloads', 'id' => 'onedrive.requirements', 'label' => 'For OneDrive, how many users and how much data must move? Note sharing links, known-folder move, and ownership concerns.', 'type' => 'textarea'],
+            ['section' => 'Additional workloads', 'id' => 'intune.requirements', 'label' => 'For Intune, how many devices by platform are in scope, and which applications, policies, certificates, and enrollment methods are required?', 'type' => 'textarea'],
+
+            ['section' => 'Project delivery', 'id' => 'project.business_goal', 'label' => 'What business outcomes should the migration achieve?', 'type' => 'textarea'],
+            ['section' => 'Project delivery', 'id' => 'project.timeline', 'label' => 'What are the desired timeline, hard deadlines, blackout dates, and business drivers?', 'type' => 'textarea'],
+            ['section' => 'Project delivery', 'id' => 'project.locations', 'label' => 'How many locations, business units, and user populations are affected?', 'type' => 'textarea'],
+            ['section' => 'Project delivery', 'id' => 'project.change_window', 'label' => 'What change windows, outage restrictions, pilot groups, and communication requirements apply?', 'type' => 'textarea'],
+            ['section' => 'Project delivery', 'id' => 'project.responsibilities', 'label' => 'Who will provide DNS changes, licensing, application remediation, user communications, testing, and executive approvals?', 'type' => 'textarea'],
+            ['section' => 'Project delivery', 'id' => 'project.other', 'label' => 'What other requirements, constraints, risks, or assumptions should be captured?', 'type' => 'textarea'],
+        ];
     }
 }
