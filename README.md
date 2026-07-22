@@ -7,102 +7,144 @@ A PHP/MariaDB web application for Sales Engineers to conduct customer discovery 
 - Local username/password authentication
 - Each Sales Engineer sees only their own assessments
 - Customer-facing Q&A beginning with the existing email environment
-- Microsoft 365 Commercial, GCC, and GCC High target discovery
+- Microsoft 365 Commercial, GCC, and GCC High discovery
 - Email, Teams, SharePoint, OneDrive, and Intune requirements
-- Mail archives, routing, third-party filtering, SMTP devices/apps, SSO, quantities, and project deadlines
-- Copyable web summary
-- Basic Microsoft Word and text exports
+- Mail archives, routing, filtering, SMTP devices/apps, SSO, quantities, and deadlines
+- Copyable web summary with basic Word and text exports
 - Optional AI-assisted risks, assumptions, dependencies, exclusions, and follow-up questions
 
 Generated findings require Sales Engineer validation before contractual use.
 
 ## Requirements
 
-- Apache 2.4 with mod_rewrite
+- Apache 2.4 with AllowOverride enabled for the account web root
 - PHP 8.2+ with PDO MySQL, cURL, JSON, and sessions
-- MariaDB 10.6+ recommended
+- MariaDB 10.6+
 - HTTPS for production
 
-## LAMP deployment
+## Repository layout
 
-### 1. Clone the development branch
+The repository supports both hosting models:
 
-    cd /var/www
-    sudo git clone --branch agent/php-migration-scoping-mvp https://github.com/jpwinslow2026/hackathon.git migration-scope
-    cd migration-scope
+- A dedicated server can set its Apache DocumentRoot to public/.
+- Shared hosting or Virtualmin can place the complete repository directly in public_html.
 
-### 2. Create the database
+For public_html, the root index.php loads the application from public/index.php. The root .htaccess serves assets from public/assets and blocks browser access to .env, src/, database/, bin/, storage/, Git metadata, and other dotfiles.
 
-For a new installation:
+## No-sudo deployment directly to the web root
 
-    sudo mariadb < database/schema.sql
+These instructions assume this application will be the website served by your account's public_html directory.
 
-Then create a least-privilege database account:
+### 1. Check the web root before installing
 
-    sudo mariadb
+    cd "$HOME/public_html"
+    pwd
+    find . -mindepth 1 -maxdepth 1 -not -name '.well-known' -print
 
-Run:
+If existing website files are listed, stop and back them up or use a separate Virtualmin virtual server/subdomain. Do not overwrite an existing site.
 
-    CREATE USER 'scope_app'@'localhost' IDENTIFIED BY 'use-a-long-random-password';
-    GRANT SELECT, INSERT, UPDATE, DELETE ON migration_scope.* TO 'scope_app'@'localhost';
-    FLUSH PRIVILEGES;
-    EXIT;
+If public_html already contains a .git directory, stop and inspect its existing repository rather than replacing it.
 
-### 3. Configure the application
+### 2. Check out the application into public_html
 
+From an empty or application-dedicated public_html directory:
+
+    cd "$HOME/public_html"
+    git init
+    git remote add origin https://github.com/jpwinslow2026/hackathon.git
+    git fetch --depth=1 origin agent/php-migration-scoping-mvp
+    git checkout -B production FETCH_HEAD
+
+The application should now have index.php, .htaccess, public/, src/, database/, bin/, and storage/ directly beneath public_html.
+
+For later updates:
+
+    cd "$HOME/public_html"
+    git fetch origin agent/php-migration-scoping-mvp
+    git reset --keep origin/agent/php-migration-scoping-mvp
+
+### 3. Validate PHP
+
+    cd "$HOME/public_html"
+    php -m | grep -E 'curl|json|PDO|pdo_mysql|session'
+    find src public bin -name '*.php' -print0 | xargs -0 -n1 php -l
+    php -l index.php
+
+Every lint command must report no syntax errors.
+
+### 4. Create tables in the assigned MariaDB database
+
+Create a database and database user through Virtualmin or obtain them from the server administrator. The application does not require permission to create databases.
+
+Import only the application tables into the assigned database:
+
+    mariadb -h localhost -u YOUR_DATABASE_USER -p YOUR_DATABASE_NAME < database/tables.sql
+
+Do not use database/schema.sql on restricted hosting; that file is for administrators provisioning a completely new database.
+
+Confirm the tables:
+
+    mariadb -h localhost -u YOUR_DATABASE_USER -p YOUR_DATABASE_NAME -e "SHOW TABLES;"
+
+### 5. Configure the application
+
+    cd "$HOME/public_html"
     cp .env.example .env
-    chmod 600 .env
     nano .env
 
-Set DB_USERNAME, DB_PASSWORD, and APP_KEY. Generate APP_KEY with:
+Set:
+
+    APP_ENV=production
+    APP_DEBUG=false
+    APP_URL=https://your-real-domain.example
+    APP_KEY=replace-with-output-from-openssl
+    DB_HOST=localhost
+    DB_PORT=3306
+    DB_DATABASE=YOUR_DATABASE_NAME
+    DB_USERNAME=YOUR_DATABASE_USER
+    DB_PASSWORD=YOUR_DATABASE_PASSWORD
+    OPENAI_API_KEY=
+    OPENAI_MODEL=gpt-5.6-luna
+
+Generate APP_KEY in a second SSH window:
 
     openssl rand -hex 32
 
-OPENAI_API_KEY can remain blank while testing the core Q&A and exports.
+Protect the configuration:
 
-### 4. Create the first local user
+    chmod 600 "$HOME/public_html/.env"
 
+OPENAI_API_KEY can remain blank while testing the Q&A and exports.
+
+### 6. Create the first local Sales Engineer
+
+    cd "$HOME/public_html"
     php bin/create-user.php joe "Joe Pilliod"
 
-The command securely prompts for a password of at least 12 characters. Repeat it for each Sales Engineer. There is deliberately no public registration page or default password.
+The command prompts for a password of at least 12 characters. Repeat it for each Sales Engineer. There is no public registration page or default password.
 
-### 5. Configure Apache
+### 7. Test from the web root
 
-Use the public directory as the document root:
+Browse to the domain itself, not a subdirectory:
 
-    <VirtualHost *:80>
-        ServerName scope.example.com
-        DocumentRoot /var/www/migration-scope/public
+    https://your-real-domain.example/
 
-        <Directory /var/www/migration-scope/public>
-            AllowOverride All
-            Require all granted
-        </Directory>
+Confirm:
 
-        ErrorLog /var/log/apache2/migration-scope-error.log
-        CustomLog /var/log/apache2/migration-scope-access.log combined
-    </VirtualHost>
+1. The sign-in page loads.
+2. The local account can sign in.
+3. A customer assessment can be created and saved.
+4. The scope-output page can be copied.
+5. Word and text exports download.
 
-On Debian/Ubuntu:
+Verify that sensitive paths are blocked:
 
-    sudo a2enmod rewrite
-    sudo a2ensite migration-scope.conf
-    sudo apachectl configtest
-    sudo systemctl reload apache2
+    curl -I https://your-real-domain.example/.env
+    curl -I https://your-real-domain.example/src/Env.php
+    curl -I https://your-real-domain.example/database/tables.sql
 
-On RHEL-family systems, put the virtual host in /etc/httpd/conf.d/migration-scope.conf and restart httpd.
-
-### 6. Validate
-
-    php -v
-    php -m | grep -E 'curl|json|pdo_mysql|session'
-    php -l public/index.php
-    php -l src/Auth.php
-    php -l src/QuestionCatalog.php
-    php -l src/OpenAIService.php
-
-Sign in, create a test assessment, complete the Q&A, and test both exports.
+Each sensitive request must return 403 or 404. Do not enter customer data if any returns 200.
 
 ## Production security
 
-Use HTTPS before entering customer information. Keep .env outside the Apache document root, restrict server access, back up MariaDB, and establish a retention policy for customer discovery data.
+Use HTTPS before entering customer information. Keep .env mode 600, restrict SSH access, back up MariaDB, and establish a retention policy for customer discovery data.
