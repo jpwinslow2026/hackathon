@@ -1,0 +1,16 @@
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve application internals from the web root.
+    RewriteRule ^(?:src|database|bin|storage)(?:/|$) - [F,L,NC]
+    RewriteRule (^|/)\. - [F,L]
+
+    # Serve public assets while keeping the implementation in public/.
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L,NC]
+</IfModule>
+
+<FilesMatch "^(?:\.env|\.env\..*|composer\.(?:json|lock)|phpunit\.xml|README\.md)$">
+    Require all denied
+</FilesMatch>
