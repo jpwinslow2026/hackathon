@@ -54,14 +54,14 @@ From an empty or application-dedicated public_html directory:
     git remote add origin https://github.com/jpwinslow2026/hackathon.git
     git fetch --depth=1 origin agent/php-migration-scoping-mvp
     git checkout -B production FETCH_HEAD
+    git branch --set-upstream-to=origin/agent/php-migration-scoping-mvp production
 
 The application should now have index.php, .htaccess, public/, src/, database/, bin/, and storage/ directly beneath public_html.
 
 For later updates:
 
     cd "$HOME/public_html"
-    git fetch origin agent/php-migration-scoping-mvp
-    git reset --keep origin/agent/php-migration-scoping-mvp
+    git pull --ff-only
 
 ### 3. Validate PHP
 
